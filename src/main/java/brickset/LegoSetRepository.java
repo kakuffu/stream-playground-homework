@@ -2,9 +2,10 @@ package brickset;
 
 import repository.Repository;
 
-import java.util.Comparator;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.*;
 
 /**
  * Represents a repository of {@code LegoSet} objects.
@@ -15,85 +16,114 @@ public class LegoSetRepository extends Repository<LegoSet> {
         super(LegoSet.class, "brickset.json");
     }
 
-    public long countLegoSetsWithLessThan500() {
-        return getAll().stream()
-                .filter(legoSet -> legoSet.getPieces() < 500)
-                .count();
-        /**
-         * Returns the number of LEGO sets with pieces less than 500.
-         *
-         * @param
-         * @return the number of LEGO sets with pieces less than 500
-         */
-    }
 
-    public long sumOfAllLegoSetPieces() {
-        /**
-         * Returns the sum of all the lego pieces
-         *
-         * @param
-         * @return sum of all the lego pieces
-         */
-        return getAll().stream().
-                filter(legoSet -> legoSet.getPackagingType() == PackagingType.BOX).
-                mapToLong(LegoSet::getPieces).
-                sum();
-    }
 
-    public void legoSetsStartingWithI() {
-        /**
-         * Returns the lego sets starting with "I"
-         *
-         * @param
-         * @return the lego sets starting with "I"
-         */
+    public void printLegoSetAlphabeticalOrder() {
         getAll().stream().
                 map(LegoSet::getName).
-                filter(name -> name.startsWith("I")).
+                sorted(Comparator.nullsFirst(Comparator.naturalOrder())).
                 forEach(System.out::println);
     }
-    public double averageLengthOfTheCountryNames(){
-        /**
-         * Calculates the average length of country names
-         *
-         * @param
-         * @return average length of country names
-         */
+
+    public long maximumPieces(){
         return getAll().stream().
-                map(LegoSet::getName).
-                mapToInt(String::length).
-                average().
-                getAsDouble();
+                mapToLong(LegoSet::getPieces).
+                max().
+                getAsLong();
     }
 
-    public String legoSetWithLongestName(){
+    public void printNameOfPackagingTypeBox(){
+        getAll().stream().
+                filter(legoset -> legoset.getPackagingType() == PackagingType.BOX).
+                map(LegoSet::getName).
+                forEach(System.out::println);
+    }
+    public void printNamePiecesLessThanHundred(){
+        getAll().stream().
+                filter(legoset -> legoset.getPieces() < 100).
+                forEach(System.out::println);
+    }
+
+//    public long sumBricksThemeDuplo(){
+//        return getAll().stream().
+//                filter(legoset -> legoset.getTheme() == Theme.DUPLO).
+//                mapToLong(LegoSet::getPieces).
+//                sum();
+//    }
+
+    public boolean printIamGayIfDuploExists(){
         /**
-         * Lego set with the longest name
-         *
          * @param
-         * @return Lego set with the longest name
+         * @return prints "I am a Turtle" if the lego set name contains word "duplo"
+         */
+      return getAll().stream().map(LegoSet::getName).
+              anyMatch(name-> name.toLowerCase().contains("duplo"));
+    }
+
+    public void printTagsWithGamesTheme(){
+        /**
+         * @param
+         * @return Returns all the tags that have Games as a theme Except tags that are null
+         */
+         getAll().stream().
+                filter(legoSet -> Objects.equals(legoSet.getTheme(), "Games")).
+                 filter(brickset -> brickset.getTags()!=null).
+                 flatMap(brickset -> brickset.getTags().stream()).
+                        forEach(System.out::println);
+    }
+
+    public Optional<String> printLongestTagOfLegoSetWithMoreThan500Pieces(){
+        /**
+         * @param
+         * @return Returns the longest lego set name that has more than 500 pieces
+         */
+       return getAll().stream().
+               filter(legoSet -> legoSet.getPieces()>500).
+               map(LegoSet::getName).
+               filter(Objects::nonNull).
+               reduce((name1, name2) -> name1.length() > name2.length()? name1 : name2);
+    }
+
+    public Map<Integer, Set<String>> printNumberOfPiecesAndThemeOfLegoSet(){
+        /**
+         * @param
+         * @return a map with number of pieces as a key and set of string as a value
          */
         return getAll().stream().
-                map(LegoSet::getName).
-                max(Comparator.comparingInt(String::length)).
-                get();
+                collect(groupingBy(LegoSet::getPieces,mapping(LegoSet::getTheme, toSet())));
     }
+
+    public Map<String, Set<PackagingType>> printNameAndPackagingTypeOfLegoSetWithThemeStarWars() {
+        /**
+         * @param
+         * @return a map with number of pieces as a key and set of string as a value
+         */
+        return getAll().stream()
+                .filter(legoSet -> legoSet.getName() != null)
+                .distinct()
+                .filter(legoSet -> legoSet.getTheme() != null && legoSet.getTheme().equals("Star Wars"))
+                .collect(groupingBy(LegoSet::getName, mapping(LegoSet::getPackagingType, toSet())));}
+
+
     public static void main(String[] args) {
         var repository = new LegoSetRepository();
-        System.out.println("The number of LEGO sets with pieces less than 500: " + repository.countLegoSetsWithLessThan500());
-        System.out.println("*********************************************************");
-        System.out.println("Sum of all the lego pieces: " + repository.sumOfAllLegoSetPieces());
-        System.out.println("***********************************");
-        System.out.println("The lego sets starting with \"I\": ");
-        repository.legoSetsStartingWithI();
-        System.out.println("***************************************************");
-        System.out.println("Average length of country names: " + repository.averageLengthOfTheCountryNames());
-        System.out.println("***********************************************************************************************");
-        System.out.println("Lego Set with longest name: " + repository.legoSetWithLongestName());
+
+        System.out.println("**Q1******************************************");
+        if (repository.printIamGayIfDuploExists())
+            System.out.println("I am turtle!");
+        System.out.println("**Q2******************************************");
+        repository.printTagsWithGamesTheme();
+        System.out.println("**Q3******************************************");
+        System.out.println(repository.printLongestTagOfLegoSetWithMoreThan500Pieces());
+        System.out.println("**Q4*****************************************");
+        System.out.println(repository.printNumberOfPiecesAndThemeOfLegoSet());
+        System.out.println("**Q5*****************************************");
+        System.out.println(repository.printNameAndPackagingTypeOfLegoSetWithThemeStarWars());
+
     }
 
-}
 
+}
 
 
 
